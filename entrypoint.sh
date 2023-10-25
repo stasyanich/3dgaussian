@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-/opt/nvidia/nvidia_entrypoint.sh
+echo  "---start"
 
-if [[ S_RUNNER=="COLMAP" ]]; then
-  exec colmap.sh
-else if [[ S_RUNNER=="GAUSSIAN" ]]; then
- exec gaussian.sh
+echo  "---nvidia_entrypoint success"
+if [[ $S_RUNNER = "COLMAP" ]]; then
+  . ../colmap.sh
+elif [[ $S_RUNNER = "GAUSSIAN" ]]; then
+ . ../gaussian.sh
  else
-   exec
+  . ../full.sh
 fi
 

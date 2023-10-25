@@ -1,16 +1,8 @@
 #!/usr/bin/env bash
 
-# home/stanislav/work/fucks/content/output/d6b9bdfb-7
-
-#stanislav@stanislav-desktop:~$ ~/work/sc_r.sh /home/stanislav/work/fucks/test /home/stanislav/work/fucks/out .zip
-
-#input
-#stanislav@stanislav-desktop:~$ ~/work/sc_r.sh /home/stanislav/work/fucks/test
-#cameras
-
 getFirstFile() {
   for dir in $1; do
-    for file in "$dir"/*"$2"; do
+    for file in "$dir"/*."$2"; do
       if [ -f "$file" ]; then
         echo "${file}"
         break 1
@@ -19,26 +11,18 @@ getFirstFile() {
   done
 }
 
-if [[ -n "$1" && -n "$2" ]]; then
-  echo "--- parameters is ok ---"
- else
-   exit 1
-fi
+WORKSPACE_DIR=/workspace
+WORK_DIR=/home/3dgs
+GAUSSIAN_DIR=/gaussian-splatting
 
-pip install -q plyfile \
-   https://huggingface.co/camenduru/gaussian-splatting/resolve/main/diff_gaussian_rasterization-0.0.0-cp310-cp310-linux_x86_64.whl \
-   https://huggingface.co/camenduru/gaussian-splatting/resolve/main/simple_knn-0.0.0-cp310-cp310-linux_x86_64.whl
+INPUT_FILE_EXTENSION="${1:-colmapzip}"
+OUTPUT_FILE_EXTENSION="${1:-plyzip}"
 
-mkdir -p /content/3dgs
-WORK_DIR=/content/3dgs
-GAUSSIAN_SPLATTING_DIR=/content/drive/MyDrive/3dgs/app/gaussian-splatting
-DIR_FROM="$1"
-FILE_EXTENSION="${3:-.colmapzip}"
-DIR_TO="$2"
-FILE_NAME_ABSOLUTE_PATH=$(getFirstFile "$DIR_FROM" "$FILE_EXTENSION")
+FILE_NAME_ABSOLUTE_PATH=$(getFirstFile "$WORKSPACE_DIR" "$INPUT_FILE_EXTENSION")
 FILE_NAME_EXTENSION="${FILE_NAME_ABSOLUTE_PATH##*/}"  # ${file##*/}" - file name and extension
 FILE_NAME="${FILE_NAME_EXTENSION%.*}"
 
+echo "INPUT_FILE_EXTENSION" "${INPUT_FILE_EXTENSION}"
 echo FILE_NAME_ABSOLUTE_PATH "${FILE_NAME_ABSOLUTE_PATH}"
 echo FILE_NAME_EXTENSION "${FILE_NAME_EXTENSION}"
 echo FILE_NAME "${FILE_NAME}"
@@ -54,11 +38,14 @@ mkdir -p "${WORK_DIR}"/{"$NAME_DIR_COLMAP","$NAME_DIR_PLY"}
 7z x "${FILE_NAME_ABSOLUTE_PATH}" -o"${WORK_DIR}/${NAME_DIR_COLMAP}"
 echo "--- extracting is success ---"
 
+# TODO how to catch python errors and stop script
+# if script ok, then delete $FILE_NAME_ABSOLUTE_PATH
+#----
 # run training script
-python "${GAUSSIAN_SPLATTING_DIR}"/train.py -s "${WORK_DIR}/${NAME_DIR_COLMAP}" -m "${WORK_DIR}/${NAME_DIR_PLY}"
+python "${GAUSSIAN_DIR}"/train.py -s "${WORK_DIR}/${NAME_DIR_COLMAP}" -m "${WORK_DIR}/${NAME_DIR_PLY}"
 
 # archive result
-time 7z a -tzip "${DIR_TO}"/"${FILE_NAME}".plyzip "${WORK_DIR}/${NAME_DIR_PLY}"/. -xr!iteration_7000
+time 7z a -tzip "${WORKSPACE_DIR}"/"${FILE_NAME}"."${OUTPUT_FILE_EXTENSION}" "${WORK_DIR}/${NAME_DIR_PLY}"/. -xr!iteration_7000
 
 rm -rf "$WORK_DIR"
 echo "--- dir " ${WORK_DIR} " was deleted ---"
